@@ -17,10 +17,17 @@ import {
   BarChart3,
   Database,
   Lock,
-  Globe
+  Globe,
+  Menu,
+  X
 } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
+import { useState } from 'react'
 
 export default function LandingPage() {
+  const { user, loading } = useAuth()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -42,14 +49,71 @@ export default function LandingPage() {
             </nav>
             
             <div className="flex items-center space-x-4">
-              <Link href="/auth/login" className="text-gray-600 hover:text-gray-900 transition-colors">
-                Login
-              </Link>
-              <Link href="/auth/signup" className="btn-primary">
-                Start for free →
-              </Link>
+              {!loading && (
+                <>
+                  {user ? (
+                    <Link href="/dashboard" className="btn-primary">
+                      Go to Dashboard →
+                    </Link>
+                  ) : (
+                    <>
+                      <Link href="/auth/login" className="text-gray-600 hover:text-gray-900 transition-colors">
+                        Login
+                      </Link>
+                      <Link href="/auth/signup" className="btn-primary">
+                        Start for free →
+                      </Link>
+                    </>
+                  )}
+                </>
+              )}
+              
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                {mobileMenuOpen ? (
+                  <X className="w-6 h-6 text-gray-600" />
+                ) : (
+                  <Menu className="w-6 h-6 text-gray-600" />
+                )}
+              </button>
             </div>
           </div>
+          
+          {/* Mobile menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-lg">
+              <div className="container mx-auto px-4 py-4 space-y-4">
+                <nav className="space-y-2">
+                  <a href="#features" className="block py-2 text-gray-600 hover:text-gray-900 transition-colors">Product</a>
+                  <a href="#pricing" className="block py-2 text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
+                  <a href="#use-cases" className="block py-2 text-gray-600 hover:text-gray-900 transition-colors">Use Cases</a>
+                  <a href="#resources" className="block py-2 text-gray-600 hover:text-gray-900 transition-colors">Resources</a>
+                </nav>
+                
+                {!loading && (
+                  <div className="pt-4 border-t border-gray-200 space-y-2">
+                    {user ? (
+                      <Link href="/dashboard" className="block w-full text-center btn-primary">
+                        Go to Dashboard →
+                      </Link>
+                    ) : (
+                      <>
+                        <Link href="/auth/login" className="block py-2 text-gray-600 hover:text-gray-900 transition-colors">
+                          Login
+                        </Link>
+                        <Link href="/auth/signup" className="block w-full text-center btn-primary">
+                          Start for free →
+                        </Link>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
@@ -68,10 +132,21 @@ export default function LandingPage() {
           </p>
           
           <div className="flex justify-center mb-8">
-            <Link href="/auth/signup" className="btn-primary flex items-center justify-center text-lg py-4 px-12">
-              <span className="text-2xl mr-3">🚀</span>
-              Get Started Free
-            </Link>
+            {!loading && (
+              <>
+                {user ? (
+                  <Link href="/dashboard" className="btn-primary flex items-center justify-center text-lg py-4 px-12">
+                    <span className="text-2xl mr-3">🚀</span>
+                    Go to Dashboard
+                  </Link>
+                ) : (
+                  <Link href="/auth/signup" className="btn-primary flex items-center justify-center text-lg py-4 px-12">
+                    <span className="text-2xl mr-3">🚀</span>
+                    Get Started Free
+                  </Link>
+                )}
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -374,9 +449,24 @@ export default function LandingPage() {
                     </li>
                   </ul>
                   
-                  <Link href="/auth/signup" className={`w-full ${plan.popular ? 'btn-primary' : 'btn-secondary'}`}>
+                  <button 
+                    onClick={() => {
+                      const paymentLinks = {
+                        'Starter': process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_STARTER,
+                        'Pro': process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_PRO,
+                        'Growth': process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_GROWTH
+                      };
+                      const paymentLink = paymentLinks[plan.name as keyof typeof paymentLinks];
+                      if (paymentLink) {
+                        window.open(paymentLink, '_blank');
+                      } else {
+                        console.error('Payment link not found for plan:', plan.name);
+                      }
+                    }}
+                    className={`w-full ${plan.popular ? 'btn-primary' : 'btn-secondary'}`}
+                  >
                     Get Started
-                  </Link>
+                  </button>
                 </div>
               </div>
             ))}
@@ -407,10 +497,21 @@ export default function LandingPage() {
           </div>
           
           <div className="flex justify-center">
-            <Link href="/auth/signup" className="bg-white text-primary-600 hover:bg-gray-100 font-semibold py-4 px-12 rounded-xl transition-colors flex items-center justify-center text-lg">
-              <span className="text-2xl mr-3">🚀</span>
-              Get Started Free
-            </Link>
+            {!loading && (
+              <>
+                {user ? (
+                  <Link href="/dashboard" className="bg-white text-primary-600 hover:bg-gray-100 font-semibold py-4 px-12 rounded-xl transition-colors flex items-center justify-center text-lg">
+                    <span className="text-2xl mr-3">🚀</span>
+                    Go to Dashboard
+                  </Link>
+                ) : (
+                  <Link href="/auth/signup" className="bg-white text-primary-600 hover:bg-gray-100 font-semibold py-4 px-12 rounded-xl transition-colors flex items-center justify-center text-lg">
+                    <span className="text-2xl mr-3">🚀</span>
+                    Get Started Free
+                  </Link>
+                )}
+              </>
+            )}
           </div>
         </div>
       </section>

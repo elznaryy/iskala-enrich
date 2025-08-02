@@ -25,6 +25,8 @@ export interface Profile {
   first_name: string | null
   last_name: string | null
   company: string | null
+  stripe_customer_id: string | null
+  current_period_end: number | null
   created_at: string
   updated_at: string
 }

@@ -135,6 +135,13 @@ export default function FileEnrichmentPage() {
         setActiveRequests(prev => [...prev, newRequest]);
         toast.success(`Enrichment started for ${enrichedData.length} records!`);
         startPolling(result.request_id, currentSheet.fileName, currentSheet.sheetName);
+      } else if (response.status === 402 && result.error === 'Insufficient credits') {
+        // Handle credit error specifically
+        const details = result.details;
+        toast.error(`❌ Insufficient credits: ${details.message}`, {
+          duration: 6000
+        });
+        console.error('Credit error:', result);
       } else {
         throw new Error(result.error || 'Failed to start enrichment');
       }

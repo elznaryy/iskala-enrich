@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { startEnrichment, generateUUID } from '@/utils/betterContactApi';
 import { createServerSupabaseClient } from '@/lib/supabase';
+import { checkUserCredits } from '@/lib/database';
+import { getCreditsForEnrichment } from '@/lib/subscriptionPlans';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,6 +24,29 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Check user credits before starting enrichment
+    const enrichmentType = enrich_email && enrich_phone ? 'BOTH' : enrich_email ? 'EMAIL_ONLY' : 'PHONE_ONLY';
+    const requiredCredits = getCreditsForEnrichment(enrichmentType);
+    
+    const creditCheck = await checkUserCredits(userId, requiredCredits);
+    
+    if (!creditCheck.hasEnoughCredits) {
+      console.log(`❌ Insufficient credits for user ${userId}: ${creditCheck.remainingCredits} remaining, ${creditCheck.requiredCredits} required`);
+      return NextResponse.json(
+        { 
+          error: 'Insufficient credits',
+          details: {
+            remainingCredits: creditCheck.remainingCredits,
+            requiredCredits: creditCheck.requiredCredits,
+            message: `You need ${creditCheck.requiredCredits} credits but only have ${creditCheck.remainingCredits} remaining.`
+          }
+        },
+        { status: 402 } // Payment Required
+      );
+    }
+
+    console.log(`✅ Credit check passed for user ${userId}: ${creditCheck.remainingCredits} remaining, ${creditCheck.requiredCredits} required`);
 
     // Add custom fields to each record
     const enrichedData = data.map(record => ({
@@ -45,7 +70,7 @@ export async function POST(request: NextRequest) {
     if (result.success) {
       // Save to database using server-side client
       const supabase = createServerSupabaseClient();
-      const enrichmentType = enrich_email && enrich_phone ? 'both' : enrich_email ? 'email' : 'phone';
+      const dbEnrichmentType = enrich_email && enrich_phone ? 'both' : enrich_email ? 'email' : 'phone';
       
       const { error: dbError } = await supabase
         .from('enrichment_requests')
@@ -53,7 +78,7 @@ export async function POST(request: NextRequest) {
           user_id: userId,
           request_id: result.id,
           request_type: 'file',
-          enrichment_type: enrichmentType,
+          enrichment_type: dbEnrichmentType,
           input_data: { 
             data: enrichedData, 
             enrich_email, 

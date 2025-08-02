@@ -29,18 +29,38 @@ export default function LoginPage() {
     setLoading(true)
     
     try {
+      console.log('Submitting login form...')
+      console.log('Login: Calling signIn function...')
       const { error } = await signIn(formData.email, formData.password)
+      console.log('Login: signIn function returned:', error ? 'with error' : 'success')
       
       if (error) {
-        toast.error(error.message || 'Failed to sign in')
+        console.error('Login error:', error)
+        
+        // Show specific error messages
+        let errorMessage = 'Failed to sign in'
+        if (error.message) {
+          if (error.message.includes('Invalid login credentials')) {
+            errorMessage = 'Invalid email or password'
+          } else if (error.message.includes('Email not confirmed')) {
+            errorMessage = 'Please check your email and confirm your account'
+          } else {
+            errorMessage = error.message
+          }
+        }
+        
+        toast.error(errorMessage)
       } else {
+        console.log('Login successful, redirecting to dashboard...')
         toast.success('Signed in successfully!')
         // Use replace to prevent back button issues
         router.replace('/dashboard')
       }
     } catch (error) {
+      console.error('Unexpected login error:', error)
       toast.error('An unexpected error occurred')
     } finally {
+      console.log('Login: Setting loading to false in finally block')
       setLoading(false)
     }
   }
