@@ -241,6 +241,14 @@ export default function IndividualEnrichmentPage() {
           duration: 4000
         });
         startPolling(data.request_id);
+      } else if (response.status === 402 && data.error === 'Insufficient credits') {
+        // Handle credit error specifically
+        setIsLoading(false);
+        const details = data.details;
+        toast.error(`❌ Insufficient credits: ${details.message}`, {
+          duration: 6000
+        });
+        console.error('Credit error:', data);
       } else {
         throw new Error(data.error || 'Failed to start enrichment');
       }

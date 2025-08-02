@@ -47,17 +47,35 @@ export async function updateEnrichmentRequest(requestId: string, updates: Partia
 }
 
 export async function getUserEnrichmentRequests(userId: string) {
+  console.log('Database: getUserEnrichmentRequests called for user:', userId)
+  
   try {
-    const { data, error } = await supabase
+    // Add timeout to prevent hanging
+    const queryPromise = supabase
       .from('enrichment_requests')
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
 
-    return { data, error }
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Query timeout after 5 seconds')), 5000)
+    })
+
+    const { data, error } = await Promise.race([queryPromise, timeoutPromise])
+
+    if (error) {
+      console.error('Database: Error in getUserEnrichmentRequests:', error)
+      // Return empty array instead of error to prevent infinite retries
+      return { data: [], error: null }
+    } else {
+      console.log('Database: getUserEnrichmentRequests completed successfully:', data?.length || 0, 'requests')
+    }
+
+    return { data: data || [], error: null }
   } catch (error) {
-    console.error('Exception in getUserEnrichmentRequests:', error);
-    return { data: null, error }
+    console.error('Database: Exception in getUserEnrichmentRequests:', error);
+    // Return empty array instead of error to prevent infinite retries
+    return { data: [], error: null }
   }
 }
 
@@ -173,6 +191,39 @@ export async function incrementUserCredits(userId: string, creditsToAdd: number)
   return { data, error }
 }
 
+// Credit validation function
+export async function checkUserCredits(userId: string, requiredCredits: number) {
+  try {
+    const { data: credits, error } = await getUserCredits(userId)
+    
+    if (error) {
+      console.error('Error fetching user credits:', error)
+      return { hasEnoughCredits: false, error: 'Failed to fetch user credits' }
+    }
+
+    if (!credits) {
+      console.error('No credits record found for user:', userId)
+      return { hasEnoughCredits: false, error: 'No credits record found' }
+    }
+
+    const totalCredits = credits.total_credits || 0
+    const usedCredits = credits.used_credits || 0
+    const remainingCredits = totalCredits - usedCredits
+
+    console.log(`Credit check for user ${userId}: ${remainingCredits} remaining, ${requiredCredits} required`)
+
+    return { 
+      hasEnoughCredits: remainingCredits >= requiredCredits,
+      remainingCredits,
+      requiredCredits,
+      error: null
+    }
+  } catch (error) {
+    console.error('Exception in checkUserCredits:', error)
+    return { hasEnoughCredits: false, error: 'Credit check failed' }
+  }
+}
+
 // Bulk operations
 export async function saveBulkResults(results: any[], requestId: string, userId: string) {
   const enrichedResults = results.map(result => ({
@@ -201,29 +252,176 @@ export async function saveBulkResults(results: any[], requestId: string, userId:
 
 // Analytics
 export async function getUserStats(userId: string) {
-  const { data: requests, error: requestsError } = await supabase
-    .from('enrichment_requests')
-    .select('status, enrichment_type, credits_used')
-    .eq('user_id', userId)
+  try {
+    console.log('Database: Fetching user stats for:', userId)
+    
+    // Fetch user credits
+    const { data: credits, error: creditsError } = await getUserCredits(userId)
+    if (creditsError) {
+      console.error('Database: Error fetching credits:', creditsError)
+    }
 
-  const { data: credits, error: creditsError } = await supabase
-    .from('user_credits')
-    .select('total_credits, used_credits')
-    .eq('user_id', userId)
-    .single()
+    // Fetch enrichment requests count with timeout
+    const requestsPromise = supabase
+      .from('enrichment_requests')
+      .select('status', { count: 'exact' })
+      .eq('user_id', userId)
 
-  if (requestsError || creditsError) {
-    return { data: null, error: requestsError || creditsError }
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Stats query timeout')), 5000)
+    })
+
+    let totalRequests = 0
+    let completedRequests = 0
+    let pendingRequests = 0
+
+    try {
+      const { data: requests, error: requestsError, count } = await Promise.race([requestsPromise, timeoutPromise])
+      
+      if (!requestsError && requests) {
+        totalRequests = count || 0
+        completedRequests = requests.filter(r => r.status === 'completed').length
+        pendingRequests = requests.filter(r => r.status === 'pending' || r.status === 'processing').length
+      }
+    } catch (error) {
+      console.warn('Database: Requests stats fetch timed out, using defaults')
+    }
+
+    const stats = {
+      totalRequests,
+      completedRequests,
+      pendingRequests,
+      totalCredits: credits?.total_credits || 50,
+      usedCredits: credits?.used_credits || 0,
+      remainingCredits: (credits?.total_credits || 50) - (credits?.used_credits || 0)
+    }
+
+    console.log('Database: getUserStats completed:', stats)
+    return { data: stats, error: null }
+    
+  } catch (error) {
+    console.error('Database: Exception in getUserStats:', error)
+    
+    // Return default stats on error
+    const defaultStats = {
+      totalRequests: 0,
+      completedRequests: 0,
+      pendingRequests: 0,
+      totalCredits: 50,
+      usedCredits: 0,
+      remainingCredits: 50
+    }
+    
+    return { data: defaultStats, error: null }
   }
+}
 
-  const stats = {
-    totalRequests: requests?.length || 0,
-    completedRequests: requests?.filter(r => r.status === 'completed').length || 0,
-    pendingRequests: requests?.filter(r => r.status === 'pending').length || 0,
-    totalCredits: credits?.total_credits || 0,
-    usedCredits: credits?.used_credits || 0,
-    remainingCredits: (credits?.total_credits || 0) - (credits?.used_credits || 0)
+/**
+ * Handle subscription renewal - reset credits and update billing period
+ */
+export async function handleSubscriptionRenewal(userId: string, planCredits: number, currentPeriodEnd: number, stripeCustomerId: string, planType: string) {
+  try {
+    // Update user credits - reset to plan credits and clear used credits
+    const { data: creditsUpdate, error: creditsError } = await supabase
+      .from('user_credits')
+      .update({ 
+        total_credits: planCredits,
+        used_credits: 0,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId)
+      .select()
+      .single()
+
+    if (creditsError) {
+      console.error('Failed to update user credits:', creditsError)
+      return { data: null, error: creditsError }
+    }
+
+    // Check if Stripe customer ID already exists in profile
+    const { data: existingProfile, error: fetchError } = await supabase
+      .from('profiles')
+      .select('stripe_customer_id')
+      .eq('id', userId)
+      .single()
+
+    if (fetchError) {
+      console.error('Failed to fetch existing profile:', fetchError)
+      return { data: null, error: fetchError }
+    }
+
+    // Update profile with current period end and Stripe customer ID (if not already set)
+    const profileUpdates: any = {
+      current_period_end: currentPeriodEnd,
+      updated_at: new Date().toISOString()
+    }
+
+    // Only add Stripe customer ID if it doesn't already exist
+    if (!existingProfile.stripe_customer_id) {
+      profileUpdates.stripe_customer_id = stripeCustomerId
+      console.log(`🔗 Adding Stripe customer ID to profile: ${stripeCustomerId}`)
+    } else {
+      console.log(`ℹ️ Stripe customer ID already exists: ${existingProfile.stripe_customer_id}`)
+    }
+
+    const { data: profileUpdate, error: profileError } = await supabase
+      .from('profiles')
+      .update(profileUpdates)
+      .eq('id', userId)
+      .select()
+      .single()
+
+    if (profileError) {
+      console.error('Failed to update profile:', profileError)
+      return { data: null, error: profileError }
+    }
+
+        console.log(`🔄 Subscription renewed for user ${userId}: ${planCredits} credits allocated`)
+    
+    // Add metadata to auth user using service role
+    try {
+      // Create admin client with service role key
+      const { createClient } = await import('@supabase/supabase-js');
+      const adminSupabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!, // Use service role key
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false
+          }
+        }
+      );
+      
+      const { error: authMetaError } = await adminSupabase.auth.admin.updateUserById(userId, {
+        user_metadata: {
+          stripe_customer_id: stripeCustomerId,
+          current_period_end: currentPeriodEnd,
+          plan_type: planType,
+          subscription_status: 'active'
+        }
+      });
+      
+      if (authMetaError) {
+        console.error('Failed to update auth user metadata:', authMetaError);
+      } else {
+        console.log(`🔑 Updated auth metadata for user ${userId}`);
+      }
+    } catch (err) {
+      console.error('Exception updating auth metadata:', err);
+    }
+    
+    // The profile table already contains the necessary subscription data
+    return { 
+      data: { 
+        credits: creditsUpdate,
+        profile: profileUpdate
+      }, 
+      error: null 
+    }
+  } catch (error) {
+    console.error('Exception in handleSubscriptionRenewal:', error)
+    return { data: null, error }
   }
-
-  return { data: stats, error: null }
 } 
+

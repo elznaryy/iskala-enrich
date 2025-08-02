@@ -38,10 +38,15 @@ interface RecentActivity {
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Debug loading state changes
+  useEffect(() => {
+    console.log('Dashboard: Loading state changed to:', loading)
+  }, [loading])
 
   useEffect(() => {
     if (user) {
@@ -49,61 +54,92 @@ export default function DashboardPage() {
     }
   }, [user])
 
-  // Refresh dashboard data every 30 seconds to show updated stats
+  // Refresh dashboard data periodically
   useEffect(() => {
     if (!user) return
 
+    // Refresh every 2 minutes instead of 1 minute to reduce load
     const interval = setInterval(() => {
+      console.log('Dashboard: Periodic refresh triggered')
       fetchDashboardData()
-    }, 30000) // Refresh every 30 seconds
+    }, 120000) // Refresh every 2 minutes
 
-    return () => clearInterval(interval)
-  }, [user])
-
-  // Refresh more frequently if there are pending requests
-  useEffect(() => {
-    if (!user) return
-
-    // Check if there are any pending requests
-    const hasPendingRequests = recentActivity.some(activity => 
-      activity.status === 'pending' || activity.status === 'processing'
-    )
-
-    if (hasPendingRequests) {
-      const interval = setInterval(() => {
-        fetchDashboardData()
-      }, 10000) // Refresh every 10 seconds if there are pending requests
-
-      return () => clearInterval(interval)
+    return () => {
+      console.log('Dashboard: Clearing periodic refresh interval')
+      clearInterval(interval)
     }
-  }, [user, recentActivity])
+  }, [user])
 
   const fetchDashboardData = async () => {
     if (!user) return
 
     try {
-      // Fetch user stats
-      const { data: userStats } = await getUserStats(user.id)
-      if (userStats) {
-        setStats(userStats)
+      console.log('Dashboard: Fetching data for user:', user.id)
+      
+      // Fetch user stats with timeout
+      const statsPromise = getUserStats(user.id)
+      const statsTimeout = new Promise<any>((_, reject) => {
+        setTimeout(() => reject(new Error('Stats timeout')), 10000)
+      })
+
+      try {
+        const { data: userStats, error: statsError } = await Promise.race([statsPromise, statsTimeout])
+        if (statsError) {
+          console.error('Dashboard: Error fetching user stats:', statsError)
+          // Use default stats
+          setStats({
+            totalRequests: 0,
+            completedRequests: 0,
+            pendingRequests: 0,
+            totalCredits: 50,
+            usedCredits: 0,
+            remainingCredits: 50
+          })
+        } else {
+          setStats(userStats)
+        }
+      } catch (error) {
+        console.warn('Dashboard: Stats fetch timed out, using defaults')
+        setStats({
+          totalRequests: 0,
+          completedRequests: 0,
+          pendingRequests: 0,
+          totalCredits: 50,
+          usedCredits: 0,
+          remainingCredits: 50
+        })
       }
 
-      // Fetch recent requests
-      const { data: requests } = await getUserEnrichmentRequests(user.id)
-      if (requests) {
-        const activity: RecentActivity[] = requests.slice(0, 5).map(request => ({
-          id: request.id,
-          type: request.request_type,
-          contact: getContactDisplayName(request),
-          result: getResultDisplay(request),
-          status: request.status,
-          timestamp: formatTimestamp(request.created_at),
-          request_id: request.request_id
-        }))
-        setRecentActivity(activity)
+      // Fetch recent activity
+      try {
+        console.log('Dashboard: Fetching recent requests...')
+        const { data: requests, error: requestsError } = await getUserEnrichmentRequests(user.id)
+        
+        if (requestsError) {
+          console.error('Dashboard: Error fetching recent requests:', requestsError)
+          setRecentActivity([])
+        } else {
+          // Transform requests into recent activity format
+          const activities: RecentActivity[] = (requests || []).slice(0, 10).map(request => ({
+            id: request.id,
+            type: request.request_type,
+            contact: getContactDisplayName(request),
+            result: getResultDisplay(request),
+            status: request.status,
+            timestamp: formatTimestamp(request.created_at),
+            request_id: request.request_id
+          }))
+          
+          console.log('Dashboard: Setting recent activity:', activities.length, 'items')
+          setRecentActivity(activities)
+        }
+      } catch (error) {
+        console.error('Dashboard: Exception fetching recent requests:', error)
+        setRecentActivity([])
       }
+
     } catch (error) {
-      console.error('Error fetching dashboard data:', error)
+      console.error('Dashboard: Exception in fetchDashboardData:', error)
     } finally {
       setLoading(false)
     }
@@ -188,7 +224,14 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-2">Welcome back! Here's what's happening with your enrichments.</p>
+          <p className="text-gray-600 mt-2">
+            Welcome back, {profile?.first_name && profile?.last_name 
+              ? `${profile.first_name} ${profile.last_name}`
+              : profile?.first_name 
+                ? profile.first_name
+                : 'there'
+            }! Here's what's happening with your enrichments.
+          </p>
         </div>
         <button
           onClick={fetchDashboardData}
