@@ -46,6 +46,7 @@ export default function FileEnrichmentPage() {
   const [showModal, setShowModal] = useState(false);
   const [modalResults, setModalResults] = useState<EnrichmentResult[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
+  const [currentRequestId, setCurrentRequestId] = useState<string>('');
 
   useEffect(() => {
     if (user) {
@@ -110,6 +111,7 @@ export default function FileEnrichmentPage() {
 
   const handleViewDetails = async (requestId: string) => {
     console.log('🔍 View Details clicked for request ID:', requestId);
+    setCurrentRequestId(requestId);
     setShowModal(true);
     setModalLoading(true);
     setModalResults([]);
@@ -590,7 +592,7 @@ export default function FileEnrichmentPage() {
                       setModalLoading(true);
                       try {
                         // Try to fetch from BetterContact API directly
-                        const response = await fetch(`/api/enrich/results?requestId=${requestId}`);
+                        const response = await fetch(`/api/enrich/results?requestId=${currentRequestId}`);
                         const data = await response.json();
                         
                         if (data.status === 'terminated' && data.data && data.data.length > 0) {
