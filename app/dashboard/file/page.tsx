@@ -57,9 +57,7 @@ export default function FileEnrichmentPage() {
       // Add timeout to prevent infinite loading
       const timeout = setTimeout(() => {
         if (loadingHistory) {
-          console.log('⏰ Timeout: Stopping loading state');
           setLoadingHistory(false);
-          toast.error('Failed to load file history - please refresh the page');
         }
       }, 10000); // 10 second timeout
 

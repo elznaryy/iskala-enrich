@@ -382,9 +382,6 @@ export default function IndividualEnrichmentPage() {
                 
                 {enrichmentType === 'phone' && (
                   <>
-                    <div className="text-sm text-gray-600 mb-2">
-                      Optional fields for your reference (not sent to API):
-                    </div>
                     <InputField
                       label="First Name (optional)"
                       name="first_name"
