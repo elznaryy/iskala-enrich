@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getUserCredits } from '@/lib/database'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
+import SubscriptionCheck from '@/components/SubscriptionCheck'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -175,14 +176,15 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Mobile sidebar backdrop */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+    <SubscriptionCheck>
+      <div className="min-h-screen bg-gray-50 flex">
+        {/* Mobile sidebar backdrop */}
+        {sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
 
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
@@ -341,5 +343,6 @@ export default function DashboardLayout({
         </main>
       </div>
     </div>
+    </SubscriptionCheck>
   )
 } 

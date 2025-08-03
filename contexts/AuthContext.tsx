@@ -121,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, firstName: string, lastName: string, company: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -129,10 +129,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           emailRedirectTo: `${window.location.origin}/auth/login`
         },
       })
+      
       if (error) {
         setError(error)
         return { error }
       }
+
+      // If user was created successfully, create profile immediately
+      if (data.user) {
+        console.log('AuthContext: Creating profile for new user:', data.user.id)
+        
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            email: email,
+            first_name: firstName,
+            last_name: lastName,
+            company: company,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+
+        if (profileError) {
+          console.error('AuthContext: Error creating profile:', profileError)
+          // Don't fail the signup if profile creation fails, but log it
+          setError(profileError)
+          return { error: profileError }
+        }
+
+        console.log('AuthContext: Profile created successfully')
+
+        // Create user credits for the new user
+        const { error: creditsError } = await supabase
+          .from('user_credits')
+          .insert({
+            user_id: data.user.id,
+            total_credits: 50, // Default free credits
+            used_credits: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+
+        if (creditsError) {
+          console.error('AuthContext: Error creating user credits:', creditsError)
+          // Don't fail the signup if credits creation fails, but log it
+          setError(creditsError)
+          return { error: creditsError }
+        }
+
+        console.log('AuthContext: User credits created successfully')
+      }
+
       setError(null)
       return { error: null }
     } catch (err) {

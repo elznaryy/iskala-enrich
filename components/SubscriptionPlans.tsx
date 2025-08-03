@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { CheckCircle, Star } from 'lucide-react'
 import { plans } from '@/lib/subscriptionPlans'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface SubscriptionPlansProps {
   showPopular?: boolean
@@ -16,6 +17,7 @@ export default function SubscriptionPlans({
   onPlanSelect 
 }: SubscriptionPlansProps) {
   const [loading, setLoading] = useState<string | null>(null)
+  const { user } = useAuth()
 
   const handleSubscribe = async (planId: string) => {
     setLoading(planId)
@@ -36,8 +38,17 @@ export default function SubscriptionPlans({
           onPlanSelect(planId)
         }
         
+        // Add prefilled email parameter if user is logged in
+        let finalPaymentLink = paymentLink
+        if (user?.email) {
+          const separator = paymentLink.includes('?') ? '&' : '?'
+          finalPaymentLink = `${paymentLink}${separator}prefilled_email=${encodeURIComponent(user.email)}`
+        }
+        
+        console.log('Opening payment link with prefilled email:', finalPaymentLink)
+        
         // Open payment link
-        window.open(paymentLink, '_blank')
+        window.open(finalPaymentLink, '_blank')
       } else {
         console.error('Payment link not found for plan:', planId)
         alert('Payment link not available. Please try again later.')
