@@ -27,35 +27,57 @@ export async function POST(request: NextRequest) {
 
     // Check user credits before starting enrichment
     const enrichmentType = enrich_email && enrich_phone ? 'BOTH' : enrich_email ? 'EMAIL_ONLY' : 'PHONE_ONLY';
-    const requiredCredits = getCreditsForEnrichment(enrichmentType);
+    const maxCreditsPerRecord = getCreditsForEnrichment(enrichmentType);
+    const maxTotalCredits = maxCreditsPerRecord * data.length;
     
-    const creditCheck = await checkUserCredits(userId, requiredCredits);
+    console.log(`📊 Credit calculation: ${data.length} records × max ${maxCreditsPerRecord} credits per record = max ${maxTotalCredits} total credits needed`);
+    
+    const creditCheck = await checkUserCredits(userId, maxTotalCredits);
     
     if (!creditCheck.hasEnoughCredits) {
-      console.log(`❌ Insufficient credits for user ${userId}: ${creditCheck.remainingCredits} remaining, ${creditCheck.requiredCredits} required`);
+      console.log(`❌ Insufficient credits for user ${userId}: ${creditCheck.remainingCredits} remaining, ${maxTotalCredits} required`);
       return NextResponse.json(
         { 
           error: 'Insufficient credits',
           details: {
             remainingCredits: creditCheck.remainingCredits,
-            requiredCredits: creditCheck.requiredCredits,
-            message: `You need ${creditCheck.requiredCredits} credits but only have ${creditCheck.remainingCredits} remaining.`
+            requiredCredits: maxTotalCredits,
+            message: `You need ${maxTotalCredits} credits (${data.length} records × max ${maxCreditsPerRecord} credits each) but only have ${creditCheck.remainingCredits} remaining.`
           }
         },
         { status: 402 } // Payment Required
       );
     }
 
-    console.log(`✅ Credit check passed for user ${userId}: ${creditCheck.remainingCredits} remaining, ${creditCheck.requiredCredits} required`);
+    console.log(`✅ Credit check passed for user ${userId}: ${creditCheck.remainingCredits} remaining, ${maxTotalCredits} required`);
 
     // Add custom fields to each record
-    const enrichedData = data.map(record => ({
-      ...record,
-      custom_fields: {
-        uuid: generateUUID(),
-        list_name: `file-enrichment-${fileName}${sheetName ? `-${sheetName}` : ''}`
+    const enrichedData = data.map(record => {
+      // For phone enrichment, only send LinkedIn URL to API
+      if (enrichmentType === 'PHONE_ONLY') {
+        return {
+          linkedin_url: record.linkedin_url,
+          // Keep other fields for display purposes but don't send to API
+          first_name: record.first_name,
+          last_name: record.last_name,
+          company: record.company,
+          company_domain: record.company_domain,
+          custom_fields: {
+            uuid: generateUUID(),
+            list_name: `file-enrichment-${fileName}${sheetName ? `-${sheetName}` : ''}`
+          }
+        };
       }
-    }));
+      
+      // For email and both enrichment, send all fields
+      return {
+        ...record,
+        custom_fields: {
+          uuid: generateUUID(),
+          list_name: `file-enrichment-${fileName}${sheetName ? `-${sheetName}` : ''}`
+        }
+      };
+    });
 
     // Call BetterContact API
     const result = await startEnrichment({

@@ -70,13 +70,32 @@ export async function POST(request: NextRequest) {
     console.log(`✅ Credit check passed for user ${userId}: ${creditCheck.remainingCredits} remaining, ${creditCheck.requiredCredits} required`);
 
     // Add custom fields to each record
-    const enrichedData = data.map(record => ({
-      ...record,
-      custom_fields: {
-        uuid: generateUUID(),
-        list_name: 'individual-enrichment'
+    const enrichedData = data.map(record => {
+      // For phone enrichment, only send LinkedIn URL to API
+      if (enrichmentType === 'PHONE_ONLY') {
+        return {
+          linkedin_url: record.linkedin_url,
+          // Keep other fields for display purposes but don't send to API
+          first_name: record.first_name,
+          last_name: record.last_name,
+          company: record.company,
+          company_domain: record.company_domain,
+          custom_fields: {
+            uuid: generateUUID(),
+            list_name: 'individual-enrichment'
+          }
+        };
       }
-    }));
+      
+      // For email and both enrichment, send all fields
+      return {
+        ...record,
+        custom_fields: {
+          uuid: generateUUID(),
+          list_name: 'individual-enrichment'
+        }
+      };
+    });
 
     // Call BetterContact API
     const result = await startEnrichment({

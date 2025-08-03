@@ -276,9 +276,9 @@ export default function FileEnrichmentPage() {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Enrichment Type</h3>
               <div className="space-y-3">
                 {[
-                  { value: 'email', label: 'Email Address (1 credit per record)', description: 'First name, Last name, Company name or Domain' },
-                  { value: 'phone', label: 'Phone Number (10 credits per record)', description: 'LinkedIn profile URL' },
-                  { value: 'both', label: 'Both Email & Phone (11 credits per record)', description: 'All fields above' }
+                  { value: 'email', label: 'Email Address (1 credit per email found)', description: 'First name, Last name, Company name or Domain' },
+                  { value: 'phone', label: 'Phone Number (10 credits per phone found)', description: 'LinkedIn profile URL' },
+                  { value: 'both', label: 'Both Email & Phone (1-11 credits per record)', description: 'All fields above - credits based on actual results' }
                 ].map((option) => (
                   <label key={option.value} className="flex items-start">
                     <input

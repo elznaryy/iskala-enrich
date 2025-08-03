@@ -41,16 +41,53 @@ export async function GET(request: NextRequest) {
           
           if (!saveError) {
             console.log('✅ Results saved to database successfully');
+            
+            // Calculate credits used based on actual results
+            let totalCreditsUsed = 0;
+            let emailRecords = 0;
+            let phoneRecords = 0;
+            let bothRecords = 0;
+            
+            result.data.forEach(record => {
+              const hasEmail = record.contact_email_address && 
+                              record.contact_email_address !== 'Not found' && 
+                              record.contact_email_address !== 'null' && 
+                              record.contact_email_address.trim() !== '';
+              const hasPhone = record.contact_phone_number && 
+                              record.contact_phone_number !== 'Not found' && 
+                              record.contact_phone_number !== 'null' && 
+                              record.contact_phone_number.trim() !== '';
+              
+              if (hasEmail && hasPhone) {
+                // Both email and phone found - 11 credits
+                totalCreditsUsed += 11;
+                bothRecords++;
+              } else if (hasEmail) {
+                // Only email found - 1 credit
+                totalCreditsUsed += 1;
+                emailRecords++;
+              } else if (hasPhone) {
+                // Only phone found - 10 credits
+                totalCreditsUsed += 10;
+                phoneRecords++;
+              }
+              // If neither found, no credits used
+            });
+            
+            console.log(`📊 Credit calculation: ${emailRecords} email records (1 credit each) + ${phoneRecords} phone records (10 credits each) + ${bothRecords} both records (11 credits each) = ${totalCreditsUsed} total credits used`);
+            
             // Update request status to completed
             await updateEnrichmentRequest(requestId, { 
               status: 'completed'
             });
 
-            // Update user credits based on enrichment type
-            const creditsUsed = request.enrichment_type === 'both' ? 11 : 
-                              request.enrichment_type === 'phone' ? 10 : 1;
-            
-            await incrementUserCredits(request.user_id, creditsUsed);
+            // Only deduct credits for successful records
+            if (totalCreditsUsed > 0) {
+              await incrementUserCredits(request.user_id, totalCreditsUsed);
+              console.log(`✅ Deducted ${totalCreditsUsed} credits (${emailRecords} email + ${phoneRecords} phone + ${bothRecords} both records)`);
+            } else {
+              console.log('ℹ️ No successful records found, no credits deducted');
+            }
           } else {
             console.error('❌ Error saving results to database:', saveError);
           }

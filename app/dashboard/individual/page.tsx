@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { Loader2, CheckCircle, XCircle, Eye, History, Clock, X } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Eye, History, Clock, X, Search } from 'lucide-react';
 import InputField from '@/components/InputField';
 import ResultTable from '@/components/ResultTable';
 import toast from 'react-hot-toast';
@@ -49,6 +49,7 @@ export default function IndividualEnrichmentPage() {
   const [showModal, setShowModal] = useState(false);
   const [modalResults, setModalResults] = useState<EnrichmentResult[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -144,6 +145,24 @@ export default function IndividualEnrichmentPage() {
   const handleFormChange = (field: keyof EnrichmentForm, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
+
+  const filteredHistory = lookupHistory.filter(request => {
+    if (!searchTerm) return true;
+    
+    const inputData = request.input_data?.data?.[0];
+    const contactName = inputData ? 
+      `${inputData.first_name || ''} ${inputData.last_name || ''} ${inputData.company || ''}`.toLowerCase() : 
+      'individual lookup';
+    
+    const requestId = request.request_id?.toLowerCase() || '';
+    const status = request.status?.toLowerCase() || '';
+    const enrichmentType = request.enrichment_type?.toLowerCase() || '';
+    
+    return contactName.includes(searchTerm.toLowerCase()) ||
+           requestId.includes(searchTerm.toLowerCase()) ||
+           status.includes(searchTerm.toLowerCase()) ||
+           enrichmentType.includes(searchTerm.toLowerCase());
+  });
 
   const startPolling = (id: string) => {
     let attempts = 0;
@@ -350,15 +369,49 @@ export default function IndividualEnrichmentPage() {
             )}
 
             {(enrichmentType === 'phone' || enrichmentType === 'both') && (
-              <InputField
-                label="LinkedIn URL"
-                name="linkedin_url"
-                value={form.linkedin_url}
-                onChange={(value) => handleFormChange('linkedin_url', value)}
-                placeholder="https://linkedin.com/in/username"
-                type="url"
-                required={true}
-              />
+              <>
+                <InputField
+                  label="LinkedIn URL"
+                  name="linkedin_url"
+                  value={form.linkedin_url}
+                  onChange={(value) => handleFormChange('linkedin_url', value)}
+                  placeholder="https://linkedin.com/in/username"
+                  type="url"
+                  required={true}
+                />
+                
+                {enrichmentType === 'phone' && (
+                  <>
+                    <div className="text-sm text-gray-600 mb-2">
+                      Optional fields for your reference (not sent to API):
+                    </div>
+                    <InputField
+                      label="First Name (optional)"
+                      name="first_name"
+                      value={form.first_name}
+                      onChange={(value) => handleFormChange('first_name', value)}
+                      placeholder="Enter first name"
+                      required={false}
+                    />
+                    <InputField
+                      label="Last Name (optional)"
+                      name="last_name"
+                      value={form.last_name}
+                      onChange={(value) => handleFormChange('last_name', value)}
+                      placeholder="Enter last name"
+                      required={false}
+                    />
+                    <InputField
+                      label="Company Name (optional)"
+                      name="company"
+                      value={form.company}
+                      onChange={(value) => handleFormChange('company', value)}
+                      placeholder="Enter company name"
+                      required={false}
+                    />
+                  </>
+                )}
+              </>
             )}
 
             <button
@@ -519,71 +572,95 @@ export default function IndividualEnrichmentPage() {
 
         {/* Lookup History */}
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">👤 Lookup History</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">👤 Lookup History</h3>
+            {lookupHistory.length > 0 && (
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search history..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 w-64"
+                />
+                <Search className="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5" />
+              </div>
+            )}
+          </div>
           {loadingHistory ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
               <p className="mt-2 text-gray-600">Loading lookup history...</p>
             </div>
           ) : lookupHistory.length > 0 ? (
-            <div className="space-y-3">
-              {lookupHistory.map((request) => {
-                const inputData = request.input_data?.data?.[0];
-                const contactName = inputData ? 
-                  `${inputData.first_name || 'Unknown'} ${inputData.last_name || ''} - ${inputData.company || 'Unknown Company'}` : 
-                  'Individual Lookup';
-                
-                return (
-                  <div key={request.id} className="flex items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                    <div className="flex-shrink-0 mr-4">
-                      <div className="p-2 bg-primary-100 text-primary-600 rounded-lg">
-                        <History className="w-5 h-5" />
-                      </div>
-                    </div>
+            <>
+              {filteredHistory.length > 0 ? (
+                <div className="max-h-[75vh] overflow-y-auto space-y-3 pr-2">
+                  {filteredHistory.map((request) => {
+                    const inputData = request.input_data?.data?.[0];
+                    const contactName = inputData ? 
+                      `${inputData.first_name || 'Unknown'} ${inputData.last_name || ''} - ${inputData.company || 'Unknown Company'}` : 
+                      'Individual Lookup';
                     
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">
-                        {contactName}
+                    return (
+                      <div key={request.id} className="flex items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                        <div className="flex-shrink-0 mr-4">
+                          <div className="p-2 bg-primary-100 text-primary-600 rounded-lg">
+                            <History className="w-5 h-5" />
+                          </div>
+                        </div>
+                        
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-900">
+                            {contactName}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {request.enrichment_type} enrichment • {request.status === 'completed' ? 'Done' : request.status}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {new Date(request.created_at).toLocaleDateString()} • Request ID: {request.request_id}
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <div className={`flex items-center ${
+                            request.status === 'completed' 
+                              ? 'text-green-600' 
+                              : request.status === 'failed'
+                              ? 'text-red-600'
+                              : 'text-yellow-600'
+                          }`}>
+                            {request.status === 'completed' ? (
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                            ) : request.status === 'failed' ? (
+                              <XCircle className="w-4 h-4 mr-1" />
+                            ) : (
+                              <Clock className="w-4 h-4 mr-1" />
+                            )}
+                            <span className="text-xs font-medium capitalize">
+                              {request.status === 'completed' ? 'Done' : request.status}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => handleViewDetails(request.request_id)}
+                            className="btn-secondary text-sm py-2 px-3 flex items-center"
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View Details
+                          </button>
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-600">
-                        {request.enrichment_type} enrichment • {request.status === 'completed' ? 'Done' : request.status}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {new Date(request.created_at).toLocaleDateString()} • Request ID: {request.request_id}
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <div className={`flex items-center ${
-                        request.status === 'completed' 
-                          ? 'text-green-600' 
-                          : request.status === 'failed'
-                          ? 'text-red-600'
-                          : 'text-yellow-600'
-                      }`}>
-                        {request.status === 'completed' ? (
-                          <CheckCircle className="w-4 h-4 mr-1" />
-                        ) : request.status === 'failed' ? (
-                          <XCircle className="w-4 h-4 mr-1" />
-                        ) : (
-                          <Clock className="w-4 h-4 mr-1" />
-                        )}
-                        <span className="text-xs font-medium capitalize">
-                          {request.status === 'completed' ? 'Done' : request.status}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => handleViewDetails(request.request_id)}
-                        className="btn-secondary text-sm py-2 px-3 flex items-center"
-                      >
-                        <Eye className="w-4 h-4 mr-1" />
-                        View Details
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">
+                    {searchTerm ? `No results found for "${searchTerm}"` : 'No lookup history'}
+                  </p>
+                </div>
+              )}
+            </>
           ) : (
             <div className="text-center py-8">
               <p className="text-gray-500">No lookup history</p>
@@ -592,11 +669,11 @@ export default function IndividualEnrichmentPage() {
         </div>
 
         {/* Results */}
-        <div>
+        {/* <div>
           {results.length > 0 && (
             <ResultTable results={results} />
           )}
-        </div>
+        </div> */}
       </div>
 
       {/* Results Modal */}

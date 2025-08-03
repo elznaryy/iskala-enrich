@@ -255,15 +255,49 @@ export default function IndividualEnrichmentPage() {
             )}
 
             {(enrichmentType === 'phone' || enrichmentType === 'both') && (
-              <InputField
-                label="LinkedIn URL"
-                name="linkedin_url"
-                value={form.linkedin_url}
-                onChange={(value) => handleFormChange('linkedin_url', value)}
-                placeholder="https://linkedin.com/in/username"
-                type="url"
-                required={true}
-              />
+              <>
+                <InputField
+                  label="LinkedIn URL"
+                  name="linkedin_url"
+                  value={form.linkedin_url}
+                  onChange={(value) => handleFormChange('linkedin_url', value)}
+                  placeholder="https://linkedin.com/in/username"
+                  type="url"
+                  required={true}
+                />
+                
+                {enrichmentType === 'phone' && (
+                  <>
+                    <div className="text-sm text-gray-600 mb-2">
+                      Optional fields for your reference (not sent to API):
+                    </div>
+                    <InputField
+                      label="First Name (optional)"
+                      name="first_name"
+                      value={form.first_name}
+                      onChange={(value) => handleFormChange('first_name', value)}
+                      placeholder="Enter first name"
+                      required={false}
+                    />
+                    <InputField
+                      label="Last Name (optional)"
+                      name="last_name"
+                      value={form.last_name}
+                      onChange={(value) => handleFormChange('last_name', value)}
+                      placeholder="Enter last name"
+                      required={false}
+                    />
+                    <InputField
+                      label="Company Name (optional)"
+                      name="company"
+                      value={form.company}
+                      onChange={(value) => handleFormChange('company', value)}
+                      placeholder="Enter company name"
+                      required={false}
+                    />
+                  </>
+                )}
+              </>
             )}
 
             <button

@@ -7,6 +7,7 @@ interface EnrichmentResult {
   last_name?: string;
   company?: string;
   company_domain?: string;
+  company_website?: string;
   linkedin_url?: string;
   email_address?: string;
   phone_number?: string;
@@ -25,15 +26,22 @@ interface ResultTableProps {
 }
 
 export default function ResultTable({ results, fileName, sheetName }: ResultTableProps) {
+  console.log('📊 ResultTable received results:', results);
+  if (results && results.length > 0) {
+    console.log('📊 First result fields:', Object.keys(results[0]));
+    console.log('📊 First result data:', results[0]);
+  }
+  
   const handleExport = () => {
     const exportData = results.map(result => ({
       'First Name': result.first_name || '',
       'Last Name': result.last_name || '',
       'Company': result.company || '',
       'Company Domain': result.company_domain || '',
+      'Company Website': result.company_website || result.company_domain || '',
       'LinkedIn URL': result.linkedin_url || '',
-      'Email Address': result.email_address || 'Not found',
-      'Phone Number': result.phone_number || 'Not found',
+      'Email Address': result.email_address || result.contact_email_address || 'Not found',
+      'Phone Number': result.phone_number || result.contact_phone_number || 'Not found',
       'Status': result.status || '',
       'Workflow': result.workflow || ''
     }));
@@ -81,6 +89,9 @@ export default function ResultTable({ results, fileName, sheetName }: ResultTabl
                 Company
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Website
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Email
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -104,6 +115,20 @@ export default function ResultTable({ results, fileName, sheetName }: ResultTabl
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {result.company || 'N/A'}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {result.company_website || result.company_domain ? (
+                    <a 
+                      href={`https://${result.company_website || result.company_domain}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 underline"
+                    >
+                      {result.company_website || result.company_domain}
+                    </a>
+                  ) : (
+                    'N/A'
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   {result.email_address || result.contact_email_address ? (

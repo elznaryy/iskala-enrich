@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { Upload, FileText, Loader2, CheckCircle, Eye, Download, X } from 'lucide-react';
+import { Upload, FileText, Loader2, CheckCircle, Eye, Download, X, Search } from 'lucide-react';
 import { parseFile, FileParseResult } from '@/utils/parseFile';
 import ColumnMapper from '@/components/ColumnMapper';
 import ResultTable from '@/components/ResultTable';
@@ -47,6 +47,7 @@ export default function FileEnrichmentPage() {
   const [modalResults, setModalResults] = useState<EnrichmentResult[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
   const [currentRequestId, setCurrentRequestId] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -108,6 +109,20 @@ export default function FileEnrichmentPage() {
       setLoadingHistory(false);
     }
   };
+
+  const filteredFileHistory = fileHistory.filter(request => {
+    if (!searchTerm) return true;
+    
+    const fileName = request.input_data?.fileName?.toLowerCase() || '';
+    const requestId = request.request_id?.toLowerCase() || '';
+    const status = request.status?.toLowerCase() || '';
+    const enrichmentType = request.enrichment_type?.toLowerCase() || '';
+    
+    return fileName.includes(searchTerm.toLowerCase()) ||
+           requestId.includes(searchTerm.toLowerCase()) ||
+           status.includes(searchTerm.toLowerCase()) ||
+           enrichmentType.includes(searchTerm.toLowerCase());
+  });
 
   const handleViewDetails = async (requestId: string) => {
     console.log('🔍 View Details clicked for request ID:', requestId);
@@ -380,9 +395,9 @@ export default function FileEnrichmentPage() {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">⚡ Enrichment Type</h3>
               <div className="space-y-3">
                 {[
-                  { value: 'email', label: 'Email Address (1 credit per record)', description: 'First name, Last name, Company name or Domain', color: 'from-success-500 to-success-600' },
-                  { value: 'phone', label: 'Phone Number (10 credits per record)', description: 'LinkedIn profile URL', color: 'from-warning-500 to-warning-600' },
-                  { value: 'both', label: 'Both Email & Phone (11 credits per record)', description: 'All fields above', color: 'from-accent-500 to-accent-600' }
+                  { value: 'email', label: 'Email Address (1 credit per email found)', description: 'First name, Last name, Company name or Domain', color: 'from-success-500 to-success-600' },
+                  { value: 'phone', label: 'Phone Number (10 credits per phone found)', description: 'LinkedIn profile URL', color: 'from-warning-500 to-warning-600' },
+                  { value: 'both', label: 'Both Email & Phone (1-11 credits per record)', description: 'All fields above - credits based on actual results', color: 'from-accent-500 to-accent-600' }
                 ].map((option) => (
                   <label key={option.value} className="flex items-start p-4 border-2 border-gray-200 rounded-xl hover:border-primary-300 transition-colors cursor-pointer">
                     <input
@@ -432,6 +447,32 @@ export default function FileEnrichmentPage() {
               onMappingChange={setColumnMapping}
               enrichmentType={enrichmentType}
             />
+          )}
+
+          {/* Credit Calculation */}
+          {currentSheet && (
+            <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium text-blue-900">
+                    Credit Calculation
+                  </div>
+                  <div className="text-sm text-blue-700">
+                    {enrichmentType === 'email' && `${currentSheet.rows.length} records × 1 credit per email found`}
+                    {enrichmentType === 'phone' && `${currentSheet.rows.length} records × 10 credits per phone found`}
+                    {enrichmentType === 'both' && `${currentSheet.rows.length} records × 1-11 credits per record (based on results)`}
+                  </div>
+                  <div className="text-xs text-blue-600 mt-1">
+                    {enrichmentType === 'both' && '• Email only: 1 credit • Phone only: 10 credits • Both: 11 credits'}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium text-blue-900">
+                    Credits only deducted for successful enrichments
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Start Enrichment Button */}
@@ -484,46 +525,70 @@ export default function FileEnrichmentPage() {
 
           {/* File History */}
           <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">📁 File History</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">📁 File History</h3>
+              {fileHistory.length > 0 && (
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search history..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 w-64"
+                  />
+                  <Search className="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5" />
+                </div>
+              )}
+            </div>
             {loadingHistory ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
                 <p className="mt-2 text-gray-600">Loading file history...</p>
               </div>
             ) : fileHistory.length > 0 ? (
-              <div className="space-y-3">
-                {fileHistory.map((request) => (
-                  <div key={request.id} className="flex items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                    <div className="flex-shrink-0 mr-4">
-                      <div className="p-2 bg-accent-100 text-accent-600 rounded-lg">
-                        <FileText className="w-5 h-5" />
+              <>
+                {filteredFileHistory.length > 0 ? (
+                  <div className="max-h-96 overflow-y-auto space-y-3 pr-2">
+                    {filteredFileHistory.map((request) => (
+                      <div key={request.id} className="flex items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                        <div className="flex-shrink-0 mr-4">
+                          <div className="p-2 bg-accent-100 text-accent-600 rounded-lg">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                        </div>
+                        
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-900">
+                            {request.input_data?.fileName || 'File Upload'}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {request.input_data?.data?.length || 0} records • {request.enrichment_type} enrichment • {request.status === 'completed' ? 'Done' : request.status}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {new Date(request.created_at).toLocaleDateString()} • {request.status}
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleViewDetails(request.request_id)}
+                            className="btn-secondary text-sm py-2 px-3 flex items-center"
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View Details
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">
-                        {request.input_data?.fileName || 'File Upload'}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {request.input_data?.data?.length || 0} records • {request.enrichment_type} enrichment • {request.status === 'completed' ? 'Done' : request.status}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {new Date(request.created_at).toLocaleDateString()} • {request.status}
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleViewDetails(request.request_id)}
-                        className="btn-secondary text-sm py-2 px-3 flex items-center"
-                      >
-                        <Eye className="w-4 h-4 mr-1" />
-                        View Details
-                      </button>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">
+                      {searchTerm ? `No results found for "${searchTerm}"` : 'No file enrichment history'}
+                    </p>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-8">
                 <p className="text-gray-500">No file enrichment history</p>
@@ -532,9 +597,9 @@ export default function FileEnrichmentPage() {
           </div>
 
           {/* Results */}
-          {results.length > 0 && (
+          {/* {results.length > 0 && (
             <ResultTable results={results} />
-          )}
+          )} */}
 
           {/* Help */}
           {!file && (

@@ -118,6 +118,10 @@ export async function getEnrichmentResults(requestId: string) {
       console.error('❌ Database error in getEnrichmentResults:', error);
     } else {
       console.log('✅ Database: Found', data?.length || 0, 'results for request', requestId);
+      if (data && data.length > 0) {
+        console.log('📊 Database result fields:', Object.keys(data[0]));
+        console.log('📊 First result data:', data[0]);
+      }
     }
 
     return { data, error }
@@ -226,21 +230,45 @@ export async function checkUserCredits(userId: string, requiredCredits: number) 
 
 // Bulk operations
 export async function saveBulkResults(results: any[], requestId: string, userId: string) {
-  const enrichedResults = results.map(result => ({
-    request_id: requestId,
-    user_id: userId,
-    first_name: result.first_name || null,
-    last_name: result.last_name || null,
-    company: result.company || null,
-    company_domain: result.company_domain || null,
-    linkedin_url: result.linkedin_url || null,
-    email_address: result.email_address || null,
-    phone_number: result.phone_number || null,
-    contact_email_address: result.contact_email_address || null,
-    contact_phone_number: result.contact_phone_number || null,
-    source: result.source || null,
-    enriched: result.enriched || false
-  }))
+  console.log('🔍 saveBulkResults called with:', { requestId, userId, resultsCount: results.length });
+  
+  const enrichedResults = results.map(result => {
+    const mappedResult = {
+      request_id: requestId,
+      user_id: userId,
+      first_name: result.contact_first_name || null,
+      last_name: result.contact_last_name || null,
+      company: result.company_name || null,
+      company_domain: result.company_domain || null,
+      linkedin_url: result.contact_linkedin_profile_url || null,
+      email_address: result.contact_email_address || null,
+      phone_number: result.contact_phone_number || null,
+      contact_email_address: result.contact_email_address || null,
+      contact_phone_number: result.contact_phone_number || null,
+      company_website: result.company_domain || null,
+      source: result.source || null,
+      enriched: result.enriched || false
+    };
+    
+    console.log('📊 Mapped result:', {
+      original: { 
+        contact_first_name: result.contact_first_name,
+        contact_last_name: result.contact_last_name,
+        company_name: result.company_name,
+        company_domain: result.company_domain,
+        contact_email_address: result.contact_email_address
+      },
+      mapped: {
+        first_name: mappedResult.first_name,
+        last_name: mappedResult.last_name,
+        company: mappedResult.company,
+        company_website: mappedResult.company_website,
+        email_address: mappedResult.email_address
+      }
+    });
+    
+    return mappedResult;
+  })
 
   const { data, error } = await supabase
     .from('enrichment_results')
