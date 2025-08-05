@@ -37,9 +37,9 @@ export default function HelpPage() {
               <h3 className="font-semibold text-gray-900 mb-2">How does it work?</h3>
               <p className="text-gray-600 text-sm">
                 Upload your CSV file with contact information, and we'll enrich it with additional data like email addresses and phone numbers.
-              </p>
+          </p>
             </div>
-
+          
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">What files are supported?</h3>
               <p className="text-gray-600 text-sm">

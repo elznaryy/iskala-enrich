@@ -449,24 +449,21 @@ export default function LandingPage() {
                     </li>
                   </ul>
                   
-                  <button 
-                    onClick={() => {
-                      const paymentLinks = {
-                        'Starter': process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_STARTER,
-                        'Pro': process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_PRO,
-                        'Growth': process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_GROWTH
-                      };
-                      const paymentLink = paymentLinks[plan.name as keyof typeof paymentLinks];
-                      if (paymentLink) {
-                        window.open(paymentLink, '_blank');
-                      } else {
-                        console.error('Payment link not found for plan:', plan.name);
-                      }
-                    }}
-                    className={`w-full ${plan.popular ? 'btn-primary' : 'btn-secondary'}`}
-                  >
-                    Get Started
-                  </button>
+                  {user ? (
+                    <Link 
+                      href="/dashboard" 
+                      className={`w-full ${plan.popular ? 'btn-primary' : 'btn-secondary'}`}
+                    >
+                      Go to Dashboard
+                    </Link>
+                  ) : (
+                    <Link 
+                      href="/auth/signup" 
+                      className={`w-full ${plan.popular ? 'btn-primary' : 'btn-secondary'}`}
+                    >
+                      Get Started
+                    </Link>
+                  )}
                 </div>
               </div>
             ))}
