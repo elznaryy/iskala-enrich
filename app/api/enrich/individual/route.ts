@@ -106,6 +106,17 @@ export async function POST(request: NextRequest) {
     });
 
     console.log('✅ BetterContact API response:', result);
+    console.log('✅ Response type:', typeof result);
+    console.log('✅ Response keys:', Object.keys(result));
+    console.log('✅ Request ID from API:', result.id);
+
+    if (!result.id) {
+      console.error('❌ No request ID in response:', result);
+      return NextResponse.json(
+        { error: 'BetterContact API did not return a valid request ID' },
+        { status: 500 }
+      );
+    }
 
     if (result.success) {
       // Save to database using server-side client

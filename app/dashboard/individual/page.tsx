@@ -6,6 +6,7 @@ import InputField from '@/components/InputField';
 import ResultTable from '@/components/ResultTable';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { getUserEnrichmentRequests, getEnrichmentResults } from '@/lib/database';
 
 interface EnrichmentForm {
@@ -49,6 +50,7 @@ export default function IndividualEnrichmentPage() {
   const [showModal, setShowModal] = useState(false);
   const [modalResults, setModalResults] = useState<EnrichmentResult[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
+  const [modalEnrichmentType, setModalEnrichmentType] = useState<'email' | 'phone' | 'both'>('both');
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -102,11 +104,27 @@ export default function IndividualEnrichmentPage() {
 
   const handleViewDetails = async (requestId: string) => {
     console.log('🔍 View Details clicked for request ID:', requestId);
+    setRequestId(requestId); // Set the requestId state
     setShowModal(true);
     setModalLoading(true);
     setModalResults([]);
     
     try {
+      // First, get the enrichment request details to determine the type
+      const { data: request, error: requestError } = await supabase
+        .from('enrichment_requests')
+        .select('enrichment_type')
+        .eq('request_id', requestId)
+        .single();
+
+      if (requestError) {
+        console.error('❌ Error fetching request details:', requestError);
+        setModalEnrichmentType('both'); // Default to both
+      } else {
+        console.log('📊 Request enrichment type:', request.enrichment_type);
+        setModalEnrichmentType(request.enrichment_type as 'email' | 'phone' | 'both');
+      }
+
       console.log('📡 Fetching results from database...');
       const { data: results, error } = await getEnrichmentResults(requestId);
       
@@ -121,7 +139,7 @@ export default function IndividualEnrichmentPage() {
         toast.success('Results loaded successfully!');
       } else {
         console.log('ℹ️ No results found in database');
-        toast.error('No results found for this request. The enrichment may still be processing.');
+        toast("Your request is still being processed. We know waiting can be frustrating, but hang tight—your results will appear here as soon as they're ready!");
       }
     } catch (error) {
       console.error('❌ Exception in handleViewDetails:', error);
@@ -668,7 +686,7 @@ export default function IndividualEnrichmentPage() {
         {/* Results */}
         {/* <div>
           {results.length > 0 && (
-            <ResultTable results={results} />
+            <ResultTable results={results} enrichmentType={enrichmentType} />
           )}
         </div> */}
       </div>
@@ -696,18 +714,26 @@ export default function IndividualEnrichmentPage() {
                   <p className="mt-2 text-gray-600">Loading results...</p>
                 </div>
               ) : modalResults.length > 0 ? (
-                <ResultTable results={modalResults} />
+                <ResultTable results={modalResults} enrichmentType={modalEnrichmentType} />
               ) : (
                 <div className="text-center py-8">
                   <p className="text-gray-500 mb-4">No results found for this request</p>
                   <p className="text-sm text-gray-400 mb-4">The enrichment may still be processing or results haven't been saved yet.</p>
                   <button
                     onClick={async () => {
+                      if (!requestId) {
+                        toast.error('No request ID available');
+                        return;
+                      }
+                      
                       setModalLoading(true);
                       try {
+                        console.log('🔄 Fetching results for request ID:', requestId);
                         // Try to fetch from BetterContact API directly
                         const response = await fetch(`/api/enrich/results?requestId=${requestId}`);
                         const data = await response.json();
+                        
+                        console.log('📡 API response:', data);
                         
                         if (data.status === 'terminated' && data.data && data.data.length > 0) {
                           setModalResults(data.data);
@@ -716,6 +742,7 @@ export default function IndividualEnrichmentPage() {
                           toast.error('No results available yet. Please try again later.');
                         }
                       } catch (error) {
+                        console.error('❌ Error fetching results:', error);
                         toast.error('Failed to fetch results');
                       } finally {
                         setModalLoading(false);

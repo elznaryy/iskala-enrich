@@ -372,7 +372,7 @@ export default function FileEnrichmentPage() {
 
           {/* Results */}
           {results.length > 0 && (
-            <ResultTable results={results} />
+            <ResultTable results={results} enrichmentType={enrichmentType} />
           )}
         </div>
       </div>

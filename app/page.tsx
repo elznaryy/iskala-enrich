@@ -44,7 +44,6 @@ export default function LandingPage() {
             <nav className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Product</a>
               <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
-              <a href="#use-cases" className="text-gray-600 hover:text-gray-900 transition-colors">Use Cases</a>
               <a href="#resources" className="text-gray-600 hover:text-gray-900 transition-colors">Resources</a>
             </nav>
             
