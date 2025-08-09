@@ -6,6 +6,7 @@ import { ArrowLeft, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import InputField from '@/components/InputField';
 import ResultTable from '@/components/ResultTable';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface EnrichmentForm {
   first_name: string;
@@ -26,6 +27,7 @@ interface EnrichmentResult {
 }
 
 export default function IndividualEnrichmentPage() {
+  const { user } = useAuth();
   const [enrichmentType, setEnrichmentType] = useState<'email' | 'phone' | 'both'>('email');
   const [form, setForm] = useState<EnrichmentForm>({
     first_name: '',
@@ -111,6 +113,11 @@ export default function IndividualEnrichmentPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!user) {
+      toast.error('Please log in to use this feature');
+      return;
+    }
+    
     if (!isFormValid()) {
       toast.error('Please fill in all required fields');
       return;
@@ -127,13 +134,16 @@ export default function IndividualEnrichmentPage() {
         body: JSON.stringify({
           data: [form],
           enrich_email: enrichmentType === 'email' || enrichmentType === 'both',
-          enrich_phone: enrichmentType === 'phone' || enrichmentType === 'both'
+          enrich_phone: enrichmentType === 'phone' || enrichmentType === 'both',
+          userId: user?.id
         })
       });
 
       const data = await response.json();
+      console.log('📡 Individual enrichment API response:', data);
 
       if (response.ok && data.request_id) {
+        console.log('✅ Received request ID:', data.request_id);
         setRequestId(data.request_id);
         toast.success('🚀 Enrichment request submitted successfully!', {
           duration: 4000
@@ -147,7 +157,13 @@ export default function IndividualEnrichmentPage() {
           duration: 6000
         });
         console.error('Credit error:', data);
+      } else if (response.ok && (!data.request_id || data.request_id === 'null')) {
+        // Handle case where no request ID was returned
+        setIsLoading(false);
+        toast.error('❌ Failed to get request ID from API');
+        console.error('No request ID in response:', data);
       } else {
+        console.error('❌ API response error:', data);
         throw new Error(data.error || 'Failed to start enrichment');
       }
     } catch (error) {
@@ -459,7 +475,7 @@ export default function IndividualEnrichmentPage() {
         {/* Results */}
         <div>
           {results.length > 0 && (
-            <ResultTable results={results} />
+            <ResultTable results={results} enrichmentType={enrichmentType} />
           )}
         </div>
       </div>

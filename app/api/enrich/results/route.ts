@@ -22,6 +22,19 @@ export async function GET(request: NextRequest) {
 
     console.log('📊 BetterContact API response:', result);
 
+    // Transform BetterContact API response to match our expected format for UI
+    if (result.data && result.data.length > 0) {
+      result.data = result.data.map(record => ({
+        ...record,
+        // Add mapped fields for UI compatibility
+        first_name: record.contact_first_name || record.first_name,
+        last_name: record.contact_last_name || record.last_name,
+        company: record.company_name || record.company,
+        email_address: record.contact_email_address || record.email_address,
+        phone_number: record.contact_phone_number || record.phone_number
+      }));
+    }
+
     // If we got results, save them to database and update status
     if (result.status === 'terminated' && result.data && result.data.length > 0) {
       console.log('✅ Terminated with results, saving to database...');
@@ -105,6 +118,11 @@ export async function GET(request: NextRequest) {
       console.log('⏳ Request still in progress:', result.status);
     }
 
+    // Ensure the response has the correct field names for the UI
+    if (result.data && result.data.length > 0) {
+      console.log('📊 Returning transformed results to UI');
+    }
+    
     return NextResponse.json(result);
   } catch (error) {
     console.error('❌ Results polling error:', error);

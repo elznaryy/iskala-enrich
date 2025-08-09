@@ -38,7 +38,7 @@ export default function SubscriptionCheck({ children }: SubscriptionCheckProps) 
   })
 
   // Pages that don't require subscription check
-  const excludedPages = ['/dashboard/settings', '/dashboard/help']
+  const excludedPages = ['/dashboard/settings', '/dashboard/help', '/pricing']
   const isExcludedPage = excludedPages.includes(pathname)
   
   // Clear redirect flag if user is on pricing page (they can access it)

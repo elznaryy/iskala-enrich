@@ -233,13 +233,6 @@ export default function DashboardPage() {
             }! Here's what's happening with your enrichments.
           </p>
         </div>
-        <button
-          onClick={fetchDashboardData}
-          className="btn-secondary flex items-center"
-        >
-          <BarChart3 className="w-4 h-4 mr-2" />
-          Refresh
-        </button>
       </div>
 
       {/* Quick actions */}

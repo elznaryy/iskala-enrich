@@ -84,6 +84,8 @@ export async function startEnrichment({
 
   const responseData = await response.json();
   console.log('✅ API Response data:', responseData);
+  console.log('✅ Response data type:', typeof responseData);
+  console.log('✅ Response data keys:', Object.keys(responseData));
   
   return responseData;
 }

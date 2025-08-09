@@ -7,6 +7,7 @@ import ColumnMapper from '@/components/ColumnMapper';
 import ResultTable from '@/components/ResultTable';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { getUserEnrichmentRequests, getEnrichmentResults } from '@/lib/database';
 
 interface EnrichmentRequest {
@@ -46,6 +47,7 @@ export default function FileEnrichmentPage() {
   const [showModal, setShowModal] = useState(false);
   const [modalResults, setModalResults] = useState<EnrichmentResult[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
+  const [modalEnrichmentType, setModalEnrichmentType] = useState<'email' | 'phone' | 'both'>('both');
   const [currentRequestId, setCurrentRequestId] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -130,6 +132,21 @@ export default function FileEnrichmentPage() {
     setModalResults([]);
     
     try {
+      // First, get the enrichment request details to determine the type
+      const { data: request, error: requestError } = await supabase
+        .from('enrichment_requests')
+        .select('enrichment_type')
+        .eq('request_id', requestId)
+        .single();
+
+      if (requestError) {
+        console.error('❌ Error fetching request details:', requestError);
+        setModalEnrichmentType('both'); // Default to both
+      } else {
+        console.log('📊 Request enrichment type:', request.enrichment_type);
+        setModalEnrichmentType(request.enrichment_type as 'email' | 'phone' | 'both');
+      }
+
       console.log('📡 Fetching results from database...');
       const { data: results, error } = await getEnrichmentResults(requestId);
       
@@ -144,7 +161,7 @@ export default function FileEnrichmentPage() {
         toast.success('Results loaded successfully!');
       } else {
         console.log('ℹ️ No results found in database');
-        toast.error('No results found for this request. The enrichment may still be processing.');
+        toast("Your request is still being processed. We know waiting can be frustrating, but hang tight—your results will appear here as soon as they're ready!");
       }
     } catch (error) {
       console.error('❌ Exception in handleViewDetails:', error);
@@ -645,7 +662,7 @@ export default function FileEnrichmentPage() {
                   <p className="mt-2 text-gray-600">Loading results...</p>
                 </div>
               ) : modalResults.length > 0 ? (
-                <ResultTable results={modalResults} />
+                <ResultTable results={modalResults} enrichmentType={modalEnrichmentType} />
               ) : (
                 <div className="text-center py-8">
                   <p className="text-gray-500 mb-4">No results found for this request</p>
