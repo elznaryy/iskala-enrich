@@ -20,11 +20,11 @@ export const plans: Plan[] = [
   {
     id: 'starter',
     name: 'Starter',
-    price: 10,
-    credits: 50,
+    price: 15,
+    credits: 200,
     features: [
-      '50 Credits',
-      '50 Valid emails',
+      '200 Credits',
+      '200 Valid emails',
       'Phone verification',
       'API access',
       'Basic enrichment capabilities'
@@ -34,7 +34,7 @@ export const plans: Plan[] = [
       priceId: 'price_starter_monthly', // Replace with your actual Stripe Price ID
       metadata: {
         planType: 'starter',
-        credits: '50',
+        credits: '200',
         features: 'basic_enrichment,phone_verification,api_access'
       }
     }
@@ -42,7 +42,7 @@ export const plans: Plan[] = [
   {
     id: 'pro',
     name: 'Pro',
-    price: 80,
+    price: 49,
     credits: 1000,
     popular: true,
     features: [
@@ -66,7 +66,7 @@ export const plans: Plan[] = [
   {
     id: 'growth',
     name: 'Growth',
-    price: 250,
+    price: 200,
     credits: 5000,
     features: [
       '5,000 Credits',

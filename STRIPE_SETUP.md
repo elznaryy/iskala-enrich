@@ -38,7 +38,7 @@ NEXT_PUBLIC_STRIPE_PAYMENT_LINK_GROWTH=https://buy.stripe.com/growth_plan_link_i
 
 3. For each product, create a recurring price:
    - Billing: Monthly
-   - Price: $10, $80, $250 respectively
+   - Price: $15, $49, $200 respectively
    - Add metadata: `planType: starter/pro/growth`
 
 ### **2. Create Payment Links**
@@ -48,21 +48,21 @@ NEXT_PUBLIC_STRIPE_PAYMENT_LINK_GROWTH=https://buy.stripe.com/growth_plan_link_i
 
 #### **Starter Plan Payment Link**
 - **Product**: Starter Plan
-- **Price**: $10/month
+- **Price**: $15/month
 - **Success URL**: `https://yourdomain.com/dashboard?success=true`
 - **Cancel URL**: `https://yourdomain.com/pricing?canceled=true`
 - **Metadata**: `planType: starter`
 
 #### **Pro Plan Payment Link**
-- **Product**: Pro Plan  
-- **Price**: $80/month
+- **Product**: Pro Plan
+- **Price**: $49/month
 - **Success URL**: `https://yourdomain.com/dashboard?success=true`
 - **Cancel URL**: `https://yourdomain.com/pricing?canceled=true`
 - **Metadata**: `planType: pro`
 
 #### **Growth Plan Payment Link**
 - **Product**: Growth Plan
-- **Price**: $250/month
+- **Price**: $200/month
 - **Success URL**: `https://yourdomain.com/dashboard?success=true`
 - **Cancel URL**: `https://yourdomain.com/pricing?canceled=true`
 - **Metadata**: `planType: growth`
@@ -134,7 +134,7 @@ Stripe Event → Webhook Endpoint → Database Update → User Credits
 #### **Checkout Completed (Initial Signup + Renewals)**
 - **Initial Signup**: Allocates credits based on plan
 - **Renewal**: Resets credits to plan amount and clears usage
-- **Starter**: 50 credits (initial) / 50 credits (renewal)
+- **Starter**: 200 credits (initial) / 200 credits (renewal)
 - **Pro**: 1,000 credits (initial) / 1,000 credits (renewal)  
 - **Growth**: 5,000 credits (initial) / 5,000 credits (renewal)
 

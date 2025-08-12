@@ -393,24 +393,22 @@ export default function LandingPage() {
             {[
               {
                 name: "Starter",
-                price: "$10",
-                credits: "50",
-                emails: "50",
-                popular: false
+                price: "$15",
+                credits: "200",
+                features: ["200 Credits", "Phone verification", "API access"]
               },
               {
                 name: "Pro",
-                price: "$80",
+                price: "$49",
                 credits: "1000",
-                emails: "1000",
+                features: ["1000 Credits", "Priority support", "Advanced features"],
                 popular: true
               },
               {
                 name: "Growth",
-                price: "$250",
+                price: "$200",
                 credits: "5000",
-                emails: "5000",
-                popular: false
+                features: ["5000 Credits", "Enterprise features", "Dedicated support"]
               }
             ].map((plan, index) => (
               <div key={index} className={`relative bg-white rounded-2xl border-2 p-8 ${plan.popular ? 'border-primary-500 shadow-xl scale-105' : 'border-gray-200'}`}>
@@ -430,22 +428,12 @@ export default function LandingPage() {
                   </div>
                   
                   <ul className="space-y-4 mb-8">
-                    <li className="flex items-center">
-                      <CheckCircle className="w-5 h-5 text-green-500 mr-3" />
-                      <span>{plan.credits} Credits</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="w-5 h-5 text-green-500 mr-3" />
-                      <span>{plan.emails} Valid emails</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="w-5 h-5 text-green-500 mr-3" />
-                      <span>Phone verification</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="w-5 h-5 text-green-500 mr-3" />
-                      <span>API access</span>
-                    </li>
+                    {plan.features.map((feature, featureIndex) => (
+                      <li key={featureIndex} className="flex items-center">
+                        <CheckCircle className="w-5 h-5 text-green-500 mr-3" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
                   </ul>
                   
                   {user ? (
