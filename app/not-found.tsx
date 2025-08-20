@@ -1,16 +1,14 @@
-import Link from 'next/link'
-import { Home, ArrowLeft, Search, FileText, User } from 'lucide-react'
+import Link from 'next/link';
+import { Home, ArrowLeft, Search, FileText, User } from 'lucide-react';
+import Logo from '@/components/Logo';
 
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-accent-50 flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full text-center">
         {/* Logo */}
-        <div className="flex items-center justify-center space-x-2 mb-8">
-          <div className="w-12 h-12 bg-gradient-to-r from-primary-600 to-accent-600 rounded-xl flex items-center justify-center">
-            <span className="text-white font-bold text-xl">i</span>
-          </div>
-          <span className="text-3xl font-bold text-gray-900">iSkala Enrich</span>
+        <div className="mb-8">
+          <Logo variant="icon" size="lg" showText={true} href="/" />
         </div>
 
         {/* 404 Illustration */}
@@ -31,51 +29,60 @@ export default function NotFound() {
             Page Not Found
           </h1>
           <p className="text-lg text-gray-600 mb-6">
-            Sorry, we couldn't find the page you're looking for. 
-            It might have been moved, deleted, or you entered the wrong URL.
+            Sorry, we couldn't find the page you're looking for. It might have
+            been moved, deleted, or you entered the wrong URL.
           </p>
         </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Link 
+          <Link
             href="/"
             className="flex items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-primary-300 hover:shadow-lg transition-all duration-300 group"
           >
             <Home className="w-5 h-5 text-gray-600 group-hover:text-primary-600 mr-2" />
-            <span className="font-medium text-gray-700 group-hover:text-primary-600">Home</span>
+            <span className="font-medium text-gray-700 group-hover:text-primary-600">
+              Home
+            </span>
           </Link>
 
-          <Link 
+          <Link
             href="/dashboard"
             className="flex items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-primary-300 hover:shadow-lg transition-all duration-300 group"
           >
             <User className="w-5 h-5 text-gray-600 group-hover:text-primary-600 mr-2" />
-            <span className="font-medium text-gray-700 group-hover:text-primary-600">Dashboard</span>
+            <span className="font-medium text-gray-700 group-hover:text-primary-600">
+              Dashboard
+            </span>
           </Link>
 
-          <Link 
+          <Link
             href="/pricing"
             className="flex items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-primary-300 hover:shadow-lg transition-all duration-300 group"
           >
             <FileText className="w-5 h-5 text-gray-600 group-hover:text-primary-600 mr-2" />
-            <span className="font-medium text-gray-700 group-hover:text-primary-600">Pricing</span>
+            <span className="font-medium text-gray-700 group-hover:text-primary-600">
+              Pricing
+            </span>
           </Link>
         </div>
 
         {/* Main CTA */}
         <div className="space-y-4">
-          <Link 
+          <Link
             href="/"
             className="inline-flex items-center btn-primary text-lg py-3 px-8"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
             Back to Home
           </Link>
-          
+
           <p className="text-sm text-gray-500">
             Or{' '}
-            <Link href="/auth/login" className="text-primary-600 hover:text-primary-700 font-medium">
+            <Link
+              href="/auth/login"
+              className="text-primary-600 hover:text-primary-700 font-medium"
+            >
               sign in to your account
             </Link>
           </p>
@@ -90,16 +97,28 @@ export default function NotFound() {
             If you're looking for something specific, try these common pages:
           </p>
           <div className="space-y-2 text-sm">
-            <Link href="/auth/login" className="block text-primary-600 hover:text-primary-700">
+            <Link
+              href="/auth/login"
+              className="block text-primary-600 hover:text-primary-700"
+            >
               → Sign In
             </Link>
-            <Link href="/auth/signup" className="block text-primary-600 hover:text-primary-700">
+            <Link
+              href="/auth/signup"
+              className="block text-primary-600 hover:text-primary-700"
+            >
               → Create Account
             </Link>
-            <Link href="/dashboard/individual" className="block text-primary-600 hover:text-primary-700">
+            <Link
+              href="/dashboard/individual"
+              className="block text-primary-600 hover:text-primary-700"
+            >
               → Individual Lookup
             </Link>
-            <Link href="/dashboard/file" className="block text-primary-600 hover:text-primary-700">
+            <Link
+              href="/dashboard/file"
+              className="block text-primary-600 hover:text-primary-700"
+            >
               → File Enrichment
             </Link>
           </div>
@@ -109,12 +128,15 @@ export default function NotFound() {
         <div className="mt-8 text-center">
           <p className="text-xs text-gray-500">
             If you believe this is an error, please{' '}
-            <Link href="/dashboard/help" className="text-primary-600 hover:text-primary-700">
+            <Link
+              href="/dashboard/help"
+              className="text-primary-600 hover:text-primary-700"
+            >
               contact support
             </Link>
           </p>
         </div>
       </div>
     </div>
-  )
-} 
+  );
+}

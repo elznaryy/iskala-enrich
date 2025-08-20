@@ -1,0 +1,27 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Simplified chevron icon for favicon -->
+  <g transform="translate(4, 8)">
+    <!-- First chevron -->
+    <path d="M0 0 L8 6 L0 12 L3 12 L11 6 L3 0 Z" fill="url(#gradient1)" />
+    <!-- Second chevron -->
+    <path d="M6 0 L14 6 L6 12 L9 12 L17 6 L9 0 Z" fill="url(#gradient2)" />
+    <!-- Third chevron -->
+    <path d="M12 0 L20 6 L12 12 L15 12 L23 6 L15 0 Z" fill="url(#gradient3)" />
+  </g>
+
+  <!-- Gradients -->
+  <defs>
+    <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#5a67d8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#667eea;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4c51bf;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#5a67d8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>

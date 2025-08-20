@@ -6,6 +6,10 @@ export interface Plan {
   popular?: boolean;
   features: string[];
   description?: string;
+  trial?: {
+    enabled: boolean;
+    days: number;
+  };
   stripe?: {
     priceId: string;
     metadata: {
@@ -22,12 +26,14 @@ export const plans: Plan[] = [
     name: 'Starter',
     price: 15,
     credits: 200,
+    trial: {
+      enabled: true,
+      days: 30
+    },
     features: [
       '200 Credits',
       '200 Valid emails',
-      'Phone verification',
-      'API access',
-      'Basic enrichment capabilities'
+      'Or 20 phone numbers'
     ],
     description: 'Perfect for small teams getting started with lead enrichment',
     stripe: {
@@ -48,10 +54,7 @@ export const plans: Plan[] = [
     features: [
       '1,000 Credits',
       '1,000 Valid emails',
-      'Phone verification',
-      'API access',
-      'Priority support',
-      'Advanced enrichment features'
+      'Or 100 phone numbers'
     ],
     description: 'Most popular choice for growing sales teams',
     stripe: {
@@ -71,10 +74,7 @@ export const plans: Plan[] = [
     features: [
       '5,000 Credits',
       '5,000 Valid emails',
-      'Phone verification',
-      'API access',
-      'Enterprise features',
-      'Dedicated support'
+      'Or 500 phone numbers'
     ],
     description: 'For large organizations requiring bulk enrichment',
     stripe: {
