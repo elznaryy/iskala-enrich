@@ -548,7 +548,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <SubscriptionPlans 
+          <SubscriptionPlans
             showPopular={true}
             redirectToSignup={true}
             onPlanSelect={(planId) => {
