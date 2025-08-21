@@ -34,7 +34,8 @@ export default function SubscriptionPlans({
     try {
       // Get plan details
       const plan = plans.find(p => p.id === planId)
-      const isTrialStart = plan?.trial?.enabled && canUseTrial
+      // const isTrialStart = plan?.trial?.enabled && canUseTrial
+      const isTrialStart = false // Disable trial for now
 
       if (isTrialStart) {
         // Handle trial start
