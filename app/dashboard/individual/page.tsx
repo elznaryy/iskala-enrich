@@ -483,15 +483,6 @@ export default function IndividualEnrichmentPage() {
                   </div>
                   
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <a 
-                      href="https://app.bettercontact.rocks" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="btn-secondary inline-block"
-                    >
-                      🔗 Open Data Provider Dashboard
-                    </a>
-                    
                     <button
                       onClick={() => {
                         setIsLoading(true);
@@ -573,10 +564,9 @@ export default function IndividualEnrichmentPage() {
                   <div className="mt-6 p-4 bg-white/50 rounded-xl">
                     <h4 className="font-semibold text-warning-900 mb-2">📋 Quick Instructions:</h4>
                     <ol className="text-sm text-warning-700 text-left space-y-1">
-                      <li>1. Click "Open Data Provider Dashboard"</li>
-                      <li>2. Find your request using ID: <strong>{requestId}</strong></li>
-                      <li>3. Copy the email address from the results</li>
-                      <li>4. Click "Add Found Email" and paste it</li>
+                      <li>1. Find your request using ID: <strong>{requestId}</strong></li>
+                      <li>2. Copy the email address from the results</li>
+                      <li>3. Click "Add Found Email" and paste it</li>
                     </ol>
                   </div>
                 </div>
