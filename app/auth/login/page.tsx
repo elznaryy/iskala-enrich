@@ -74,7 +74,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full">
         {/* Back to home */}
         <Link
-          href="/"
+          href="https://iskala.ai/"
           className="inline-flex items-center text-primary-600 hover:text-primary-700 mb-8 font-medium transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -84,7 +84,7 @@ export default function LoginPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-6">
-            <Logo variant="icon" size="md" showText={true} href="/" />
+            <Logo variant="icon" size="md" showText={true} href="https://iskala.ai/" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Welcome back
